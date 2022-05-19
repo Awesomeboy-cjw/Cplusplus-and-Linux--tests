@@ -1,0 +1,90 @@
+#include <iostream>
+#include <cstdio>
+using namespace std;
+
+
+void* operator new(size_t size){
+    if(size == 0) size = 1;
+    
+    void* ptr = malloc(size);
+    if(ptr == nullptr){
+        std::cout << "ERROR NEW!" << std::endl;
+    }
+    std::cout << "NEW Memory Size = " << size << " address = " << ptr << std::endl;
+    return ptr;
+}
+ 
+void* operator new[](size_t size){
+    if(size == 0) size = 1;
+ 
+    void* ptr = malloc(size);
+    if(ptr == nullptr){
+        std::cout << "ERROR NEW[]!" << std::endl;
+    }
+    std::cout << "NEW[] Memory Size = " << size << " address = " << ptr << std::endl;
+ 
+    return ptr;
+}
+void operator delete(void* ptr){
+    std::cout << "DELETE " << ptr << std::endl;
+    if(ptr) free(ptr);
+}
+void operator delete[](void* ptr){
+    std::cout << "DELETE[] " << ptr << std::endl;
+    if(ptr) free(ptr);
+}
+class test
+{
+    int x;
+    double y;
+    char z;
+    public:
+    test(): x(3), y(2.2), z('q'){printf("constructor ---- %p\n",this);};
+    ~test()
+    {
+        printf("destructor ---- %p\n", this);
+    }
+    void print()
+    {
+        cout<<x<<" "<<y<<" "<<z<<endl;
+    }
+};
+
+class Master
+{
+public:
+    Master()
+    {
+        printf("constructor ---- %p\n",this);
+        c = rand()%10000;
+        d = 1.1;
+    }
+    
+    ~Master()
+    {
+        printf("destructor ---- %p\n", this);
+    }
+private:
+    int c;
+    double d;
+};
+
+int main()
+{
+    int x;
+    cin>>x;
+    Master* pt = new Master[x];
+    cout<<sizeof(Master)<<endl;
+    cout<<sizeof(pt)<<endl;
+    cout<<pt<<endl;
+    long *it = (long*)pt;
+    it --;
+    //it --;
+    cout<<it<<endl;
+    printf("%ld\n", *it);
+    delete [] pt;
+    return 0;
+}
+/*当new[]对具有析构函数的类分配内存时候，会多分配8个字节(32位是4字节)用来记录数组大小
+  这样当delete[]时，就可以根据记录的大小进行析构函数的执行，如果没有析构函数则没有这
+  8个字节*/
