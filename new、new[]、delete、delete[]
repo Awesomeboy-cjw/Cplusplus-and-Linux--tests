@@ -2,7 +2,9 @@
 #include <cstdio>
 using namespace std;
 
-
+/*自定义operator new、operator new[]、operator delete、operator delete[]，
+ new和new[]先调用operator new和operator new[]分配内存，然后调用构造函数
+ delete和delete []先调用析构函数然后调用operator delete和operator delete[]*/
 void* operator new(size_t size){
     if(size == 0) size = 1;
     
