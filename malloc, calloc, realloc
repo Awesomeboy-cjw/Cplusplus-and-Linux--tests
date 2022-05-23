@@ -4,6 +4,8 @@ using namespace std;
 
 int main()
 {
+    /*pdf说malloc分配的空间值随机初始化，calloc分配的空间值初始化为0
+      但测试都为0*/
     const int nums = 20;
     cout<<"test malloc's init~\n";
     int *ptint = (int*)malloc(sizeof(int) * nums);
