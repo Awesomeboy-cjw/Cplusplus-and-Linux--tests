@@ -1,0 +1,90 @@
+#include <cstdio>
+#include <iostream>
+using namespace std;
+
+class A
+{
+    int a;
+    public:
+    A():a(1)
+    {
+        cout<<"construct class A~\n";
+    }
+    A(A& aa)
+    {
+        a = aa.a;
+        cout<<"copy construct class A~\n";
+    }
+    ~A() {cout<<"destroy class A~\n";}
+};
+
+class B
+{
+    int b;
+    public:
+    B():b(2)
+    {
+        cout<<"construct class B~\n";
+    }
+    ~B() {cout<<"destroy class B~\n";}
+};
+
+class C
+{
+    int c;
+    public:
+    C():c(3)
+    {
+        cout<<"construct class C~\n";
+    }
+    ~C() {cout<<"destroy class C~\n";}
+};
+
+//D多重继承(继承父类B，虚继承父类C)，同时包含成员A类aa
+/*
+  构造函数执行顺序:
+  1.虚拟基类的构造函数（多个虚拟基类则按照继承的顺序执行构造函数。
+  2.基类的构造函数（多个普通基类也按照继承的顺序执行构造函数。
+  3.类类型的成员对象的构造函数（按照初始化顺序）。
+  4.派生类自己的构造函数。
+  在D中分别执行C,B,A,D的构造函数，对应上述顺序
+
+  析构函数执行顺序：
+  与上面相反
+*/
+class D : public B, virtual public C
+{
+    int d;
+    A aa;
+    public:
+    D(A& aa): d(4), aa(aa)
+    {
+        cout<<"construct class D~\n";
+    }
+    ~D() {cout<<"destroy class D~\n";}
+};
+
+int main()
+{
+    A aa;
+    cout<<"D start~\n";
+    {
+        D dd(aa);
+    }
+    cout<<"D over~\n";
+    return 0;
+}
+/*output
+    construct class A~
+    D start~
+    construct class C~
+    construct class B~
+    copy construct class A~
+    construct class D~
+    destroy class D~
+    destroy class A~
+    destroy class B~
+    destroy class C~
+    D over~
+    destroy class A~
+*/
