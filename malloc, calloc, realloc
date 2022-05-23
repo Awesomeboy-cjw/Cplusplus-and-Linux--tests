@@ -1,0 +1,32 @@
+#include <cstdio>
+#include <iostream>
+using namespace std;
+
+int main()
+{
+    const int nums = 20;
+    cout<<"test malloc's init~\n";
+    int *ptint = (int*)malloc(sizeof(int) * nums);
+    for(int i=0; i<nums; ++i)
+    {
+        cout<<*ptint<<" ";
+    }
+    cout<<endl<<"now test calloc~\n";
+    int *ptint2 = (int*)calloc(nums, sizeof(int));
+    for(int i=0; i<nums; ++i)
+    {
+        cout<<*ptint2<<" ";
+    }
+    cout<<endl<<"now test relloc~\n";
+    
+    //relloc函数给动态分配的空间扩容
+    int *ptint3 = (int*)realloc((void*)ptint, sizeof(int)*nums*2);
+    for(int i=0; i<nums*2; ++i)
+    {
+        cout<<*ptint<<" ";
+    }
+    cout<<endl<<"end!\n";
+    free(ptint2);
+    free(ptint3);
+    return 0;
+}
