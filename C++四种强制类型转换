@@ -1,0 +1,81 @@
+#include <bits/stdc++.h>
+using namespace std;
+class Base
+{
+    public:
+    Base() :b(1) {}
+    virtual void fun() {};
+    int b;
+};
+
+class Son : public Base
+{
+    public:
+    Son() :d(2) {}
+    int d;
+};
+
+int main()
+{
+    int n = 22;
+    /*reinterpret_cast<type-id>(expression)
+      将expression类型转为type-id类型，
+      二者至少有一个为指针或引用类型;
+      1.用于将整型转为指针类型；
+      2.用于不同指针类型转换；
+      3.将指针类型转为整形。
+    */
+    int * pt1 = &n;
+    //long cjw = reinterpret_cast<long>(n); 编译报错
+    //cout<<"整型转换为指针类型\n";
+    long* pt2 = reinterpret_cast<long*>(n);
+    //cout<<"不同指针类型转换\n";
+    long* pt3 = reinterpret_cast<long*>(pt1);
+    //cout<<"指针类型转为整型\n";
+    long pt4 = reinterpret_cast<long>(pt1);
+    cout<<pt1<<" "<<pt2<<" "<<pt3<<" "<<pt4<<endl;
+
+
+    /*const_cast<type-id>(expression)
+      用来修改类型的const或volatile属性。除了const 或volatile修饰之外，
+      type_id和expression的类型是一样的
+      常见用法：
+      1.常量指针转化为非常量指针；
+      2.常量引用转化为非常量引用；
+    */
+    const int *pt5 = pt1;
+    int * pt6 = const_cast<int*>(pt5);
+    *pt6 = 23;
+    cout<<*pt5<<" "<<*pt6<<endl;
+
+
+    /*static_cast<type-id>(expression)
+      用来进行内置类型转换以及类类型转换
+      常见用法：
+      1.内置类型转换，如int转换为char
+      2.类类型指针(引用)转换(向上转换，向下不安全)
+    */
+    //long* pt7 = static_cast<long*>(pt1);
+    char cr = static_cast<char>(n);
+    Base css1;
+    Son css2;
+    Base* ct1 = &css1;
+    Son* ct2 = &css2;
+    Base* ct3 = static_cast<Base*>(ct2);//向上指针类型转换
+
+
+    /*dynamic_cast<type-id>(expression)
+      用于类指针(引用)间的转换
+      可以向下转换，不安全则返回空指针
+    */
+    Base* ct4 = dynamic_cast<Base*>(ct2);//向上指针类型转换
+    Son* ct5 = dynamic_cast<Son*>(ct1);
+    if(!ct5) cout<<"ct5 is nullptr~\n";
+    else cout<<ct5->d<<endl;
+    Base& rf2class1 = css1;
+    Son& rf2class2 = css2;
+    Base& rf2class3 = dynamic_cast<Base&>(css2); //向上引用类型转换
+    //Son& rf2class4 = dynamic_cast<Son&>(css1); 不安全，编译会warning
+    cout<<rf2class3.b<<endl;
+    return 0;
+}
