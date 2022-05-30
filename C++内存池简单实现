@@ -1,0 +1,161 @@
+/*
+    C++内存池简单实现：
+    内存池（Memory Pool） 是一种内存分配方式。通常我们习惯直接使用new、malloc 等申请内存，这样
+    做的缺点在于：由于所申请内存块的大小不定，当频繁使用时会造成大量的内存碎片并进而降低性能。
+    内存池则是在真正使用内存之前，先申请分配一定数量的、大小相等(一般情况下)的内存块留作备用。
+    当有新的内存需求时，就从内存池中分出一部分内存块， 若内存块不够再继续申请新的内存。这样做的
+    一个显著优点是尽量避免了内存碎片，使得内存分配效率得到提升。
+*/
+
+#include <iostream>
+using namespace std;
+
+template<int ObjectSize, int NumofObjects>
+class MemPool{
+private:
+	//空闲节点结构体
+	struct FreeNode{
+		FreeNode* pNext;        //指向下一空闲节点
+		char data[ObjectSize];  //节点中的内存空间
+	};
+
+	//内存块结构体
+	struct MemBlock{
+		MemBlock* pNext;       //指向系统上一次分配的内存块
+		FreeNode data[NumofObjects];  //内存块中存储空间被分为多个节点
+	};
+
+	FreeNode* freeNodeHeader;  //空闲节点链表头，为NULL是说明无空闲节点可用
+	MemBlock* memBlockHeader;
+
+public:
+	MemPool(){
+		freeNodeHeader = NULL;
+		memBlockHeader = NULL;
+	}
+
+	~MemPool(){
+		MemBlock* ptr;
+		while (memBlockHeader)
+		{
+			ptr = memBlockHeader->pNext;
+			delete memBlockHeader;
+			memBlockHeader = ptr;
+		}
+	}
+	void* malloc();
+	void free(void*);
+};
+
+//分配空闲的节点
+template<int ObjectSize, int NumofObjects>
+void* MemPool<ObjectSize, NumofObjects>::malloc(){
+	//无空闲节点，申请新内存块
+	if (freeNodeHeader == NULL){
+		MemBlock* newBlock = new MemBlock;
+		newBlock->pNext = NULL;
+
+		freeNodeHeader=&newBlock->data[0];	 //设置内存块的第一个节点为空闲节点链表的首节点
+		//将内存块的其它节点串起来
+		for (int i = 1; i < NumofObjects; ++i){
+			newBlock->data[i - 1].pNext = &newBlock->data[i];
+		}
+		newBlock->data[NumofObjects - 1].pNext=NULL;
+
+		//首次申请内存块
+		if (memBlockHeader == NULL){
+			memBlockHeader = newBlock;
+		} else {
+			//将新内存块加入到内存块链表
+			newBlock->pNext = memBlockHeader;
+			memBlockHeader = newBlock;
+		}
+	}
+	//返回空节点闲链表的第一个节点
+	void* freeNode = freeNodeHeader;
+	freeNodeHeader = freeNodeHeader->pNext;
+	return freeNode;
+}
+
+//释放已经分配的节点
+template<int ObjectSize, int NumofObjects>
+void MemPool<ObjectSize, NumofObjects>::free(void* p) {
+	FreeNode* pNode = (FreeNode*)p;
+	pNode->pNext = freeNodeHeader;	//将释放的节点插入空闲节点头部
+	freeNodeHeader = pNode;
+}
+
+class ActualClass {
+	static int count;
+	int No;
+
+public:
+	ActualClass() {
+		No = count;
+		count++;
+	}
+
+	void print() {
+		cout << this << ": ";
+		cout << "the " << No << "th object" << endl;
+	}
+    //自定义new和delete操作符(用内存池中的内存)
+	void* operator new(size_t size);
+	void operator delete(void* p);
+};
+
+// 定义内存池对象
+MemPool<sizeof(ActualClass), 2> mp;
+
+void* ActualClass::operator new(size_t size) {
+	return mp.malloc();
+}
+
+void ActualClass::operator delete(void* p) {
+	mp.free(p);
+}
+
+int ActualClass::count = 0;
+
+int main() {
+    cout<<sizeof(ActualClass)<<endl;
+	ActualClass* p1 = new ActualClass;
+	p1->print();
+
+	ActualClass* p2 = new ActualClass;
+	p2->print();
+	delete p1;
+
+	p1 = new ActualClass;
+	p1->print();
+
+	ActualClass* p3 = new ActualClass;
+	p3->print();
+
+	delete p1;
+	delete p2;
+	delete p3;
+}
+/*  输出结果
+    4 
+    0xd32288: the 0th object
+    0xd32298: the 1th object
+    0xd32288: the 2th object
+    0xd322b8: the 3th object
+
+    ActualClass对象大小为sizeof(int)为4没啥问题
+    创建对象0并把地址赋给指针p1，此时内存池没有空闲内存，申请新内存块
+    在MemPool<sizeof(ActualClass), 2> mp处定义内存池大小为2
+    p0 = 0xd32288
+
+    接着创建对象1并把地址赋值给p2，此时有空闲节点，直接用p1 = 0xd32298
+    所以p1和p0差了16个字节(4字节的ActualClass对象，还有8字节的FreeNode* pNext;
+    同时考虑内存对齐，所以占用16字节)
+
+    然后释放对象0即p1指向的内存，再创建对象2，此时有空闲节点(就是对象0之前那块内存)
+    所以p3的值就是之前p0的值0xd32288
+
+    最后创建对象3，由于无空闲节点，继续申请新的内存块，所以p4指针的值0xd322b8和前三个对象
+    的地址相差较远(因为是新的内存块)
+
+*/
