@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+int main()
+{
+    const char* filename = "1.txt";
+    int fd = open(filename, O_RDWR|O_CREAT|O_TRUNC, S_IRWXU|S_IRWXG|S_IRWXO);
+    if(fd == -1)
+    {
+        perror("");
+        printf("open %s failed\n", filename);
+        exit(1);
+    }
+    printf("%s's fd is %d\n",filename, fd);
+    int pid = fork();
+    if(pid > 0)
+    {
+        filename = "2.txt";
+        fd = open(filename, O_RDWR|O_CREAT|O_TRUNC, S_IRWXU|S_IRWXG|S_IRWXO);
+        if(fd == -1)
+        {
+            printf("father open %s failed\n", filename);
+            exit(1);
+        }
+        printf("father %s's fd is %d\n",filename, fd);
+
+        filename = "3.txt";
+        fd = open(filename, O_RDWR|O_CREAT|O_TRUNC, S_IRWXU|S_IRWXG|S_IRWXO);
+        if(fd == -1)
+        {
+            printf("father open %s failed\n", filename);
+            exit(1);
+        }
+        printf("father %s's fd is %d\n",filename, fd);
+    }
+    else if(pid == 0)
+    {
+        int oldfd = fd;
+        filename = "2.txt";
+        fd = open(filename, O_RDWR|O_CREAT|O_TRUNC, S_IRWXU|S_IRWXG|S_IRWXO);
+        if(fd == -1)
+        {
+            perror("");
+            printf("child open %s failed\n", filename);
+            exit(1);
+        }
+        printf("child %s's fd is %d\n",filename, fd);
+
+        close(oldfd); //关闭1.txt
+        filename = "4.txt";
+        fd = open(filename, O_RDWR|O_CREAT|O_TRUNC, S_IRWXU|S_IRWXG|S_IRWXO);
+        if(fd == -1)
+        {
+            printf("child open %s failed\n", filename);
+            exit(1);
+        }
+        printf("child %s's fd is %d\n",filename, fd);
+        exit(0);
+    }
+    else
+    {
+        printf("fork failed\n");
+        exit(1);
+    }
+    return 0;
+}
+/*
+    程序输出结果
+    1.txt's fd is 3
+    father 2.txt's fd is 4
+    father 3.txt's fd is 5
+    child 2.txt's fd is 4
+    child 5.txt's fd is 3
+    程序默认打开0，1，2文件描述符(读，写，异常)
+    因此父进程里的打开的三个文件分别占用3 4 5文件描述符
+
+    子进程继承了0 1 2 3文件描述符
+    然后打开2.txt占用4，然后关闭1.txt的文件描述符3
+    再打开4.txt占用文件描述符3
+
+    因此父子进程中分别打开相同文件对应的文件描述符可能不同
+    取进程可用的最小文件描述符用于标记要打开的文件
+*/
+
+/*
+    open()第二个参数
+    S_IRWXU 文件所属者的RWX权限
+    S_IRWXG 文件所属组的RWX权限
+    S_IRWXO 其他用户的RWX权限
+*/
+
+
